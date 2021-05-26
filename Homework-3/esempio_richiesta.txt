@@ -1,0 +1,35 @@
+{
+    "id": "017ee110210ef7de5c9e6eed4bb3aa57",
+    "questions":
+    [
+        {
+            "question": "Come si chiama la Pimpa?",
+            "type": "open",
+            "answer": "Pimpa"
+        },
+        {
+            "question": "La Pimpa sa ballare?",
+            "type": "v/f",
+            "answer": "False"
+        },
+        {
+            "question": "La Pimpa ha",
+            "type": "choice",
+            "choices": [
+                {
+                    "choice": "4 anni"
+                },
+                {
+                    "choice": "6 anni"
+                },
+                {
+                    "choice": "4 nasi"
+                },
+                {
+                    "choice": "5 orecchie"
+                }
+            ],
+            "answer": "1"
+        }
+    ]
+}

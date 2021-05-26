@@ -67,14 +67,14 @@ tedx_dataset_agg = tedx_dataset.join(tags_dataset_agg, tedx_dataset.idx == tags_
 tedx_dataset_agg.printSchema()
 
 ## READ SUBTITLES DATASET
-subtitles_dataset_path = "s3://miobucketunibg1/subtitles_dataset.csv"
+subtitles_dataset_path = "s3://miobucketunibg1/TED_Talk.csv"
 subtitles_dataset = spark.read.option("header","true").csv(subtitles_dataset_path)
 
 # CREATE THE AGGREGATE MODEL, ADD SUBTITLES TO TEDX_DATASET
-subtitles_dataset_agg = subtitles_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_list(struct('language','culture','subtitle_track')).alias("subtitles"))
+subtitles_dataset_agg = subtitles_dataset.groupBy(col("url__webpage").alias("transcript_url")).agg(collect_list("transcript").alias("subtitles"))
 subtitles_dataset_agg.printSchema()
-tedx_dataset_agg = tedx_dataset_agg.join(subtitles_dataset_agg, tedx_dataset_agg._id == subtitles_dataset_agg.idx_ref, "left") \
-    .drop("idx_ref") \
+tedx_dataset_agg = tedx_dataset_agg.join(subtitles_dataset_agg, tedx_dataset_agg.url == subtitles_dataset_agg.transcript_url, "left") \
+    .drop("transcript_url") \
     #.select(col("idx").alias("_id"), col("*")) \
     #.drop("idx") \
 
@@ -83,10 +83,15 @@ subtitles_dataset_agg.printSchema()
 ## READ WATCHNEXT DATASET
 watchnext_dataset_path = "s3://miobucketunibg1/watch_next_dataset.csv"
 watchnext_dataset = spark.read.option("header","true").csv(watchnext_dataset_path)
-watchnext_dataset=watchnext_dataset.dropDuplicates()
+watchnext_dataset=watchnext_dataset.dropDuplicates().where('url!="https://www.ted.com/session/new?context=ted.www%2Fwatch-later"')
+
+watchnext_dataset=watchnext_dataset.select(col("idx").alias("id"), col("*")).drop("idx")
+watchnext_dataset=watchnext_dataset.select(col("url").alias("link"), col("*")).drop("url")
+
+watchnext_dataset=watchnext_dataset.join(tedx_dataset,tedx_dataset.idx==watchnext_dataset.watch_next_idx)
 
 # CREATE THE AGGREGATE MODEL, ADD WATCHNEXT TO TEDX_DATASET
-watchnext_dataset_agg=watchnext_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_list(struct('url','watch_next_idx')).alias("watch_next"))
+watchnext_dataset_agg=watchnext_dataset.groupBy(col("id").alias("idx_ref")).agg(collect_list(struct('link','watch_next_idx','main_speaker','title','posted')).alias("watch_next"))
 watchnext_dataset_agg.printSchema()
 watchnext_dataset_agg = tedx_dataset_agg.join(watchnext_dataset_agg, tedx_dataset_agg._id == watchnext_dataset_agg.idx_ref, "left") \
     .drop("idx_ref") \
@@ -100,7 +105,7 @@ mongo_uri = "mongodb://cluster0-shard-00-00.jrgnj.mongodb.net:27017,cluster0-sha
 write_mongo_options = {
     "uri": mongo_uri,
     "database": "unibg_tedx_2021",
-    "collection": "tedx_subtitles",
+    "collection": "tedx_new",
     "username": "admin123",
     "password": "admin123",
     "ssl": "true",
