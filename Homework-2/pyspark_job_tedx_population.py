@@ -72,6 +72,7 @@ subtitles_dataset = spark.read.option("header","true").csv(subtitles_dataset_pat
 
 # CREATE THE AGGREGATE MODEL, ADD SUBTITLES TO TEDX_DATASET
 subtitles_dataset_agg = subtitles_dataset.groupBy(col("url__webpage").alias("transcript_url")).agg(collect_list("transcript").alias("subtitles"))
+subtitles_dataset_agg= subtitles_dataset_agg.where(col("subtitles").isNotNull())
 subtitles_dataset_agg.printSchema()
 tedx_dataset_agg = tedx_dataset_agg.join(subtitles_dataset_agg, tedx_dataset_agg.url == subtitles_dataset_agg.transcript_url, "left") \
     .drop("transcript_url") \
@@ -105,7 +106,7 @@ mongo_uri = "mongodb://cluster0-shard-00-00.jrgnj.mongodb.net:27017,cluster0-sha
 write_mongo_options = {
     "uri": mongo_uri,
     "database": "unibg_tedx_2021",
-    "collection": "tedx_new",
+    "collection": "triviated",
     "username": "admin123",
     "password": "admin123",
     "ssl": "true",
